@@ -29,11 +29,38 @@ st.divider()
 
 tab1, tab2 = st.tabs(["Single prediction (Form)", "Batch prediction (CSV)"])
 
+import numpy as np
+import math
+
+def json_sanitize_records(records: list[dict]) -> list[dict]:
+    """Replace NaN/inf with None so payload becomes valid JSON."""
+    out = []
+    for r in records:
+        rr = {}
+        for k, v in r.items():
+            # pandas/numpy missing values
+            if v is None:
+                rr[k] = None
+                continue
+
+            # numpy scalars -> python scalars
+            if isinstance(v, (np.integer, np.floating, np.bool_)):
+                v = v.item()
+
+            # NaN / inf
+            if isinstance(v, float) and (math.isnan(v) or math.isinf(v)):
+                rr[k] = None
+            else:
+                rr[k] = v
+        out.append(rr)
+    return out
+
+
 
 def call_predict(api_url: str, rows: list[dict]) -> pd.DataFrame:
     """Call FastAPI /predict and return dataframe of predictions."""
     payload = {"rows": rows}
-    r = requests.post(f"{api_url}/predict", json=payload, timeout=30)
+    r = requests.post(f"{api_url}/predict", json=payload)
     if r.status_code != 200:
         # FastAPI returns {"detail": "..."}
         try:
@@ -128,6 +155,7 @@ with tab2:
         else:
             if st.button("Predict for CSV"):
                 rows = df.to_dict(orient="records")
+                rows = json_sanitize_records(rows)
                 with st.spinner(f"Predicting {len(rows)} rows..."):
                     try:
                         df_pred = call_predict(api_url, rows)
