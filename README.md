@@ -1,62 +1,136 @@
 # INCEPTION Team - Intelligent Insurance Bundle Recommender
 
-This repository contains the final solution for the *DataQuest Hackathon*.  
+This project was submitted during the *DataQuest Hackathon* which was made in collaboration by the *INCEPTION Team*.  
 The system predicts which insurance bundle a customer is likely to purchase based on profile and policy data.
 
----
 
-## Project Structure : 
-submission.zip
-│
-├─ solution.py          # Preprocessing, model loading, and predict interface
-├─ model.joblib         # Trained LightGBM model bundle
-├─ requirements.txt     # Python dependencies
-├─ demo.mp4              # Web Integration Video Capture
-├─ README.md            # Project documentation
-### 1. solution.py
+## Project Overview
 
-Contains the required functions for submission:
+This project implements a **machine learning-based recommender system** that predicts which insurance coverage bundle a prospective customer will purchase. The model uses structured tabular data capturing demographic, financial, behavioral, and temporal signals to make accurate predictions across 10 classes (bundles 0–9).
 
-1. *Preprocessing*
-   - Feature engineering: Total_Dependents, Income_Log, Risk_Score, Month_sin/cos  
+The solution was designed to optimize the **competition-adjusted Macro F1 score**, taking into account:
+
+- Model size constraints  
+- Inference latency penalties  
+- Memory and CPU limitations  
+
+## Project Structure
+
+Below is the complete structure of the DataQuest Hackathon project repository.
+
+```bash
+DataQuest-Brief-Document.pdf
+└── Official hackathon brief containing problem statement, constraints, and evaluation rules.
+
+Dataset/
+├── solution.py
+│      └── Competition-ready inference pipeline (preprocess, load_model, predict).
+├── test.csv
+│      └── Test dataset (features only) used for final predictions.
+├── train.csv
+│      └── Training dataset (features + Purchased_Coverage_Bundle target).
+└── README.md
+       └── Dataset description, feature definitions, and usage instructions.
+
+Deliverables/
+├── Phase 1 : Model Development/
+│ ├── modeltraining.py
+│ │       └── Script used for feature engineering, model training, and model serialization.
+│ └── submission/
+│       ├── solution.py
+│       │       └── Final judge-compliant solution file.
+│       ├── model.joblib
+│       │       └── Serialized LightGBM model bundle (compressed).
+│       └── requirements.txt
+│               └── Python dependency list required for execution in the judge environment.
+└── Phase 2 : Productization & Deployment/
+      ├── Inception AI - Presentation Slides.pdf
+      │       └── Final pitch deck presented during Phase II.
+      ├── INCEPTION Team - Technical Report.pdf
+      │       └── Complete technical documentation including architecture, features, and justification.
+      └── Video Demonstration.mp4
+              └── Recorded demo showcasing the deployed solution and inference workflow.
+```
+
+## Dataset
+
+- **Training Set:** 60,868 rows with features + target (`Purchased_Coverage_Bundle`)  
+- **Test Set:** 15,218 rows with features only
+
+### Key Features
+
+- **Demographics & Household:** Adult/Child/Infant Dependents  
+- **Financial:** Estimated Annual Income  
+- **Behavioral & Risk:** Previous Claims, Policy Amendments, Claim-free Years  
+- **Temporal:** Policy Start Month/Week/Day  
+- **Broker & Acquisition:** Broker_ID, Employer_ID, Acquisition Channel  
+
+**Target:** `Purchased_Coverage_Bundle` (10 classes: 0–9)
+
+
+## Solution Architecture
+
+High-level pipeline:
+
+1. **Preprocessing**
+   - Feature engineering: `Total_Dependents`, `Income_Log`, `Risk_Score`, `Month_sin/cos`  
    - Encoding: ordinal + frequency encoding for high-cardinality features  
    - Numeric imputation: median replacement  
 
-2. *Model Loading*
-   - Pre-trained LightGBM classifier (LGBMClassifier) stored in model.joblib  
+2. **Model Loading**
+   - Pre-trained LightGBM classifier (`LGBMClassifier`) stored in `model.joblib`  
 
-3. *Prediction*
-   - predict() returns User_ID + Purchased_Coverage_Bundle  
-   - Predictions are clipped to valid class range [0–9] ---
-
-### 2. modelTraining.py
-
-Used to:
-
-- Load the training dataset (train.csv)  
-- Engineer features: Total_Dependents, Income_Log, Risk_Score, Month_sin, Month_cos  
-- Encode categorical features and handle missing values  
-- Apply class weighting for Macro F1 optimization  
-- Train a *LightGBM* classifier (45 trees)  
-- Save the model bundle as model.joblib
-
----
-
-### 3. model.joblib
-
-Serialized model bundle containing:
-
-- Trained LightGBM model  
-- Feature order and columns info  
-- Categorical encoders  
-- Numeric median values  
-- Frequency maps and month mapping
-
----
-
-### 4. requirements.txt
-Lists Python dependencies
+3. **Prediction**
+   - `predict()` returns `User_ID` + `Purchased_Coverage_Bundle`  
+   - Predictions are clipped to valid class range `[0–9]`  
 
 
-##Author
-INCEPTION Team during the DataQuest 2026
+## Preprocessing & Feature Engineering
+
+- **Household features:** Total dependents, vehicles per dependent  
+- **Financial features:** Log-transformed income  
+- **Behavioral risk score:** Combines claims, claim-free years, and amendments  
+- **Temporal encoding:** Month as cyclical features (`sin` and `cos`)  
+- **Broker influence:** Frequency encoding  
+- **Categorical encoding:** Ordinal mapping  
+- **Numeric imputation:** Median fill + float32 conversion  
+
+
+## Model Training
+
+- **Model:** LightGBM classifier (`LGBMClassifier`)  
+- **Trees:** 45 trees, 63 leaves  
+- **Learning rate:** 0.08  
+- **Class weights:** Adjusted to optimize Macro F1  
+- **Objective:** Multiclass (10 classes)  
+
+**Rationale for LightGBM:**
+
+| Model       | Advantages                         | Notes                                      |
+|------------ |-----------------------------------|-------------------------------------------|
+| **LightGBM** | Fast inference, small model size, memory efficient | Selected for competition constraints |
+| CatBoost    | Great categorical handling, high accuracy | Larger model, slower inference            |
+| XGBoost     | Strong baseline, stable            | Slower training, slightly larger          |
+
+
+
+## Explainability
+
+- **Feature Importance:** Top 15 features influence predictions significantly  
+- **SHAP Analysis:** Highlights contribution of each feature and interactions  
+- **Prediction Confidence:** Histogram of max probabilities shows model certainty  
+- **Tree Visualization:** Provides insight into first tree structure  
+
+
+## Installation
+
+```bash
+# Clone repository
+git clone <repository-url>
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+## License
+This project is submitted as part of the DataQuest Hackathon and may not be redistributed without permission.
