@@ -1,136 +1,174 @@
-# INCEPTION Team - Intelligent Insurance Bundle Recommender
+# DataQuest: Phase I
 
-This project was submitted during the *DataQuest Hackathon* which was made in collaboration by the *INCEPTION Team*.  
-The system predicts which insurance bundle a customer is likely to purchase based on profile and policy data.
+## Files
 
+| File          | Description                                                                                  |
+| :------------ | :------------------------------------------------------------------------------------------- |
+| `train.csv`   | Training set with features **and** the target column `Purchased_Coverage_Bundle`.            |
+| `test.csv`    | Test set (features only). The auto-evaluator feeds this to your code.                        |
+| `solution.py` | Template with the three functions you must implement: `preprocess`, `load_model`, `predict`. |
 
-## Project Overview
+---
 
-This project implements a **machine learning-based recommender system** that predicts which insurance coverage bundle a prospective customer will purchase. The model uses structured tabular data capturing demographic, financial, behavioral, and temporal signals to make accurate predictions across 10 classes (bundles 0–9).
+## Objective
 
-The solution was designed to optimize the **competition-adjusted Macro F1 score**, taking into account:
+Build a model that predicts which **`Purchased_Coverage_Bundle`** (integer 0–9) a prospective customer will choose.
 
-- Model size constraints  
-- Inference latency penalties  
-- Memory and CPU limitations  
+This is a **multi-class classification** problem with 10 classes.
 
-## Project Structure
+---
 
-Below is the complete structure of the DataQuest Hackathon project repository.
+## Target Variable Mapping
 
-```bash
-DataQuest-Brief-Document.pdf
-└── Official hackathon brief containing problem statement, constraints, and evaluation rules.
+| ID    | Bundle Name            |
+| :---- | :--------------------- |
+| **0** | `Auto_Comprehensive`   |
+| **1** | `Auto_Liability_Basic` |
+| **2** | `Basic_Health`         |
+| **3** | `Family_Comprehensive` |
+| **4** | `Health_Dental_Vision` |
+| **5** | `Home_Premium`         |
+| **6** | `Home_Standard`        |
+| **7** | `Premium_Health_Life`  |
+| **8** | `Renter_Basic`         |
+| **9** | `Renter_Premium`       |
 
-Dataset/
-├── solution.py
-│      └── Competition-ready inference pipeline (preprocess, load_model, predict).
-├── test.csv
-│      └── Test dataset (features only) used for final predictions.
-├── train.csv
-│      └── Training dataset (features + Purchased_Coverage_Bundle target).
-└── README.md
-       └── Dataset description, feature definitions, and usage instructions.
+---
 
-Deliverables/
-├── Phase 1 : Model Development/
-│ ├── modeltraining.py
-│ │       └── Script used for feature engineering, model training, and model serialization.
-│ └── submission/
-│       ├── solution.py
-│       │       └── Final judge-compliant solution file.
-│       ├── model.joblib
-│       │       └── Serialized LightGBM model bundle (compressed).
-│       └── requirements.txt
-│               └── Python dependency list required for execution in the judge environment.
-└── Phase 2 : Productization & Deployment/
-      ├── Inception AI - Presentation Slides.pdf
-      │       └── Final pitch deck presented during Phase II.
-      ├── INCEPTION Team - Technical Report.pdf
-      │       └── Complete technical documentation including architecture, features, and justification.
-      └── Video Demonstration.mp4
-              └── Recorded demo showcasing the deployed solution and inference workflow.
+## Columns
+
+### Identifiers & Target
+
+- `User_ID` — Unique customer identifier.
+- `Purchased_Coverage_Bundle` — **[TARGET]** Integer 0–9 (see mapping above). Present in `train.csv` only.
+
+### Demographics & Financials
+
+- `Adult_Dependents` — Number of adults covered.
+- `Child_Dependents` — Number of children covered.
+- `Infant_Dependents` — Number of infants covered.
+- `Estimated_Annual_Income` — Estimated yearly household income.
+- `Employment_Status` — Working arrangement of the primary applicant.
+- `Region_Code` — Anonymized geographic location.
+
+### Customer History & Risk Profile
+
+- `Existing_Policyholder` — Already has another active policy?
+- `Previous_Claims_Filed` — Total prior claims.
+- `Years_Without_Claims` — Consecutive claim-free years.
+- `Previous_Policy_Duration_Months` — Duration of prior policy.
+- `Policy_Cancelled_Post_Purchase` — History of early cancellations?
+
+### Policy Details & Preferences
+
+- `Deductible_Tier` — Chosen deductible level.
+- `Payment_Schedule` — Premium payment frequency.
+- `Vehicles_on_Policy` — Number of vehicles covered.
+- `Custom_Riders_Requested` — Special coverage add-ons.
+- `Grace_Period_Extensions` — Payment deadline extensions.
+
+### Sales & Underwriting
+
+- `Days_Since_Quote` — Days between quote and finalization.
+- `Underwriting_Processing_Days` — Days for underwriting approval.
+- `Policy_Amendments_Count` — Quote modifications before signing.
+- `Acquisition_Channel` — How the policy was sold.
+- `Broker_Agency_Type` — Scale of the brokerage firm.
+- `Broker_ID` — Sales agent identifier.
+- `Employer_ID` — Employer identifier.
+
+### Timeline
+
+- `Policy_Start_Year`, `Policy_Start_Month`, `Policy_Start_Week`, `Policy_Start_Day`
+
+---
+
+## Scoring
+
+Your **final score** combines three factors:
+
+```
+score = macro_f1 × size_penalty × duration_penalty
+
+where:
+  macro_f1         = (1/N) Σ F1_i   (unweighted average over all N classes)
+  size_penalty     = max(0.5, 1 − model_size_mb / 200)
+  duration_penalty = max(0.5, 1 − predict_seconds / 10)
 ```
 
-## Dataset
+### Macro F1-Score
 
-- **Training Set:** 60,868 rows with features + target (`Purchased_Coverage_Bundle`)  
-- **Test Set:** 15,218 rows with features only
+F1 is the harmonic mean of precision and recall. The **Macro** variant computes F1 per class independently, then takes the unweighted average — so every bundle matters equally, regardless of frequency.
 
-### Key Features
+### Size Penalty
 
-- **Demographics & Household:** Adult/Child/Infant Dependents  
-- **Financial:** Estimated Annual Income  
-- **Behavioral & Risk:** Previous Claims, Policy Amendments, Claim-free Years  
-- **Temporal:** Policy Start Month/Week/Day  
-- **Broker & Acquisition:** Broker_ID, Employer_ID, Acquisition Channel  
+Penalizes large model files. A 0 MB model scores 1.0 (no penalty); a 100 MB model scores 0.5. The penalty floors at 0.5 — no model, however large, loses more than half its F1.
 
-**Target:** `Purchased_Coverage_Bundle` (10 classes: 0–9)
+### Latency Penalty
 
+Penalizes slow `predict()` calls. 0 s → 1.0; 5 s → 0.5. Floors at 0.5. Only `predict()` is timed — `preprocess()` and `load_model()` run before the clock starts.
 
-## Solution Architecture
+> **Tip:** Don't just chase F1. A lightweight, fast model with slightly lower F1 can outscore a bloated one.
 
-High-level pipeline:
+---
 
-1. **Preprocessing**
-   - Feature engineering: `Total_Dependents`, `Income_Log`, `Risk_Score`, `Month_sin/cos`  
-   - Encoding: ordinal + frequency encoding for high-cardinality features  
-   - Numeric imputation: median replacement  
+## Submission Format
 
-2. **Model Loading**
-   - Pre-trained LightGBM classifier (`LGBMClassifier`) stored in `model.joblib`  
+Your `.zip` must contain exactly **3 files** at the root (no nested folders):
 
-3. **Prediction**
-   - `predict()` returns `User_ID` + `Purchased_Coverage_Bundle`  
-   - Predictions are clipped to valid class range `[0–9]`  
+| File               | Required | Notes                                                                  |
+| :----------------- | :------: | :--------------------------------------------------------------------- |
+| `solution.py`      |   yes    | Must export `preprocess`, `load_model`, `predict`.                     |
+| `model.*`          |   yes    | Exactly one file starting with `model` (e.g. `model.pkl`, `model.pt`). |
+| `requirements.txt` |   yes    | Extra pip packages. Can be empty but must exist.                       |
 
+### What `predict()` must return
 
-## Preprocessing & Feature Engineering
+A **pandas DataFrame** with two columns:
 
-- **Household features:** Total dependents, vehicles per dependent  
-- **Financial features:** Log-transformed income  
-- **Behavioral risk score:** Combines claims, claim-free years, and amendments  
-- **Temporal encoding:** Month as cyclical features (`sin` and `cos`)  
-- **Broker influence:** Frequency encoding  
-- **Categorical encoding:** Ordinal mapping  
-- **Numeric imputation:** Median fill + float32 conversion  
-
-
-## Model Training
-
-- **Model:** LightGBM classifier (`LGBMClassifier`)  
-- **Trees:** 45 trees, 63 leaves  
-- **Learning rate:** 0.08  
-- **Class weights:** Adjusted to optimize Macro F1  
-- **Objective:** Multiclass (10 classes)  
-
-**Rationale for LightGBM:**
-
-| Model       | Advantages                         | Notes                                      |
-|------------ |-----------------------------------|-------------------------------------------|
-| **LightGBM** | Fast inference, small model size, memory efficient | Selected for competition constraints |
-| CatBoost    | Great categorical handling, high accuracy | Larger model, slower inference            |
-| XGBoost     | Strong baseline, stable            | Slower training, slightly larger          |
-
-
-
-## Explainability
-
-- **Feature Importance:** Top 15 features influence predictions significantly  
-- **SHAP Analysis:** Highlights contribution of each feature and interactions  
-- **Prediction Confidence:** Histogram of max probabilities shows model certainty  
-- **Tree Visualization:** Provides insight into first tree structure  
-
-
-## Installation
-
-```bash
-# Clone repository
-git clone <repository-url>
-
-# Install dependencies
-pip install -r requirements.txt
+```
+User_ID,Purchased_Coverage_Bundle
+USR_060868,7
+USR_060869,2
+USR_060870,4
+...
 ```
 
-## License
-This project is submitted as part of the DataQuest Hackathon and may not be redistributed without permission.
+Every `User_ID` from the test set must be present. The `Purchased_Coverage_Bundle` column must contain integer predictions (0–9).
+
+---
+
+## Pre-installed Packages
+
+The evaluation container already has these installed — you don't need to list them in `requirements.txt`:
+
+| Package      | Version     |
+| :----------- | :---------- |
+| numpy        | 1.26.4      |
+| scipy        | 1.11.4      |
+| pandas       | 2.1.4       |
+| scikit-learn | 1.3.2       |
+| xgboost      | 2.0.3       |
+| lightgbm     | 4.6.0       |
+| catboost     | 1.2.3       |
+| torch        | 2.6.0 (CPU) |
+| torchvision  | 0.21.0      |
+| torchaudio   | 2.6.0       |
+| tensorflow   | 2.14.0      |
+| joblib       | 1.3.2       |
+
+You **can** add extra packages via `requirements.txt`. You **cannot** override pre-installed versions.
+
+---
+
+## Limits
+
+| Constraint           | Value  |
+| :------------------- | :----- |
+| Max upload size      | 50 MB  |
+| Container memory     | 1 GB   |
+| Container CPU        | 1 core |
+| Execution timeout    | 120 s  |
+| Submissions per team | 20     |
+
+Good luck!
