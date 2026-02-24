@@ -1,6 +1,12 @@
-# DataQuest Hackathon — INCEPTION Team
-**Intelligent Insurance Bundle Recommendation**
+# DataQuest Hackathon — Intelligent Insurance Bundle Recommendation
 
+This repository contains the final Submittion Files for the **DataQuest Hackathon** which was made in Collaboration by the **INCEPTION Team**
+
+## INCEPTION Team Members 
+- Oueslati Ouala Eddine (Team Leader)
+- Nasri Mohamed Amine
+- Berrehouma Fares
+- Gharbi Wieme
 
 
 ## Project Overview
@@ -23,18 +29,17 @@ DataQuest-Brief-Document.pdf
 
 Dataset/
 │
-├─ README.md
-│    └─ Dataset description, feature definitions, and usage instructions.
-│
 ├─ solution.py
 │    └─ Competition-ready inference pipeline (preprocess, load_model, predict).
 │
 ├─ test.csv
 │    └─ Test dataset (features only) used for final predictions.
 │
-└─ train.csv
-     └─ Training dataset (features + Purchased_Coverage_Bundle target).
-
+├─ train.csv
+|    └─ Training dataset (features + Purchased_Coverage_Bundle target).
+|
+└─ README.md
+     └─ Dataset description, feature definitions, and usage instructions.
 
 Deliverables/
 │
@@ -56,6 +61,14 @@ Deliverables/
 │
 └─ Phase 2 : Productization & Deployment/
     │
+    ├─ Web & API Integration/
+    │    │
+    │    ├─ api.py
+    │    │    └─ Backend API exposing prediction endpoints for real-time inference.
+    │    │
+    │    └─ UI.py
+    │         └─ Frontend user interface enabling bundle prediction through a simple interactive form.
+    │
     ├─ Inception AI - Presentation Slides.pdf
     │    └─ Final pitch deck presented during Phase II.
     │
@@ -64,6 +77,7 @@ Deliverables/
     │
     └─ Video Demonstration.mp4
          └─ Recorded demo showcasing the deployed solution and inference workflow.
+
 ```
 
 
@@ -146,3 +160,7 @@ git clone <repository-url>
 pip install -r requirements.txt
 ```
 
+## Licence 
+
+This code is for hackathon evaluation purposes only.
+Do not redistribute or use for commercial purposes without permission.
