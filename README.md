@@ -2,12 +2,6 @@
 
 This repository contains the final Submittion Files for the **DataQuest Hackathon** which was made in Collaboration by the **INCEPTION Team**
 
-## INCEPTION Team Members 
-- Oueslati Ouala Eddine (Team Leader)
-- Nasri Mohamed Amine
-- Berrehouma Fares
-- Gharbi Wieme
-
 
 ## Project Overview
 
@@ -159,6 +153,14 @@ git clone <repository-url>
 # Install dependencies
 pip install -r requirements.txt
 ```
+
+
+## INCEPTION Team Members 
+- Oueslati Ouala Eddine (Team Leader)
+- Nasri Mohamed Amine
+- Berrehouma Fares
+- Gharbi Wieme
+
 
 ## Licence 
 
